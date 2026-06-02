@@ -65,11 +65,13 @@ class BlockquoteSpan(
     val borderPaint = configureBorderPaint()
     val borderTop = top.toFloat()
     val borderBottom = bottom.toFloat()
+    // Anchor borders to the TextView left edge; list LeadingMarginSpan shifts `x` and breaks alignment.
+    val anchorX = 0f
 
     for (level in 0..depth) {
-      val borderX = x + (levelSpacing * level * dir)
-      val borderRight = borderX + (blockquoteStyle.borderWidth * dir)
-      c.drawRect(minOf(borderX, borderRight), borderTop, maxOf(borderX, borderRight), borderBottom, borderPaint)
+      val borderX = anchorX + levelSpacing * level
+      val borderRight = borderX + blockquoteStyle.borderWidth
+      c.drawRect(borderX, borderTop, borderRight, borderBottom, borderPaint)
     }
   }
 

@@ -29,6 +29,8 @@ interface BlockquoteStyleInternal extends BaseBlockStyleInternal {
   borderWidth: number;
   gapWidth: number;
   backgroundColor: string;
+  paddingTop: number;
+  paddingBottom: number;
 }
 
 interface ListStyleInternal extends BaseBlockStyleInternal {

@@ -36,6 +36,16 @@ class BlockquoteRenderer(
     }
 
     if (builder.length == start) return
+
+    if (depth == 0) {
+      if (style.paddingTop > 0f) {
+        applyMarginTop(builder, start, style.paddingTop)
+      }
+      if (style.paddingBottom > 0f) {
+        applyMarginBottom(builder, style.paddingBottom)
+      }
+    }
+
     val end = builder.length
 
     // Find immediately nested quotes to exclude them from this level's line-height/margins

@@ -480,6 +480,16 @@ BOOL applyMarkdownStyleToConfig(StyleConfig *config, const MarkdownStyle &newSty
     changed = YES;
   }
 
+  if (newStyle.blockquote.paddingTop != oldStyle.blockquote.paddingTop) {
+    [config setBlockquotePaddingTop:newStyle.blockquote.paddingTop];
+    changed = YES;
+  }
+
+  if (newStyle.blockquote.paddingBottom != oldStyle.blockquote.paddingBottom) {
+    [config setBlockquotePaddingBottom:newStyle.blockquote.paddingBottom];
+    changed = YES;
+  }
+
   // ── Link ───────────────────────────────────────────────────────────────────
 
   if (newStyle.link.fontFamily != oldStyle.link.fontFamily) {

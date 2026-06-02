@@ -44,12 +44,18 @@ static NSString *const kNestedInfoRangeKey = @"range";
                            end:(NSUInteger)end
                   currentDepth:(NSInteger)currentDepth
 {
-  NSUInteger contentStart = start;
+  NSUInteger blockquoteStart = start;
   if (currentDepth == 0) {
-    contentStart += applyBlockSpacingBefore(output, start, [_config blockquoteMarginTop]);
+    blockquoteStart += applyBlockSpacingBefore(output, start, [_config blockquoteMarginTop]);
+    blockquoteStart += applyBlockSpacingBefore(output, blockquoteStart, [_config blockquotePaddingTop]);
   }
 
-  NSRange blockquoteRange = NSMakeRange(contentStart, end - start);
+  if (currentDepth == 0) {
+    applyBlockSpacingAfter(output, [_config blockquotePaddingBottom]);
+  }
+
+  end = output.length;
+  NSRange blockquoteRange = NSMakeRange(blockquoteStart, end - blockquoteStart);
   CGFloat levelSpacing = [_config blockquoteBorderWidth] + [_config blockquoteGapWidth];
   NSArray<NSDictionary *> *nestedInfo = [self collectNestedBlockquotes:output range:blockquoteRange depth:currentDepth];
 

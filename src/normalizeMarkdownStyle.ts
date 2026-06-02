@@ -99,6 +99,8 @@ const DEFAULT_NORMALIZED_STYLE = Object.freeze({
     lineHeight: Platform.select({ ios: 24, android: 26, default: 26 })!,
     marginTop: 0,
     marginBottom: 16,
+    paddingTop: 0,
+    paddingBottom: 0,
     borderColor: normalizeColor('#D1D5DB')!,
     borderWidth: 3,
     gapWidth: 16,

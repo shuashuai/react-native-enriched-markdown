@@ -85,6 +85,8 @@ const DEFAULT_NORMALIZED_STYLE: MarkdownStyleInternal = Object.freeze({
     lineHeight: 26,
     marginTop: 0,
     marginBottom: 16,
+    paddingTop: 0,
+    paddingBottom: 0,
     borderColor: '#D1D5DB',
     borderWidth: 3,
     gapWidth: 16,

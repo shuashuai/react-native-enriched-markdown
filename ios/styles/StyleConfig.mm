@@ -148,6 +148,8 @@ static inline NSString *normalizedFontWeight(NSString *fontWeight)
   CGFloat _blockquoteBorderWidth;
   CGFloat _blockquoteGapWidth;
   RCTUIColor *_blockquoteBackgroundColor;
+  CGFloat _blockquotePaddingTop;
+  CGFloat _blockquotePaddingBottom;
   ENRMFontSlot *_blockquoteFont;
   // List style properties (combined for both ordered and unordered lists)
   CGFloat _listStyleFontSize;
@@ -416,6 +418,8 @@ static inline NSString *normalizedFontWeight(NSString *fontWeight)
   copy->_blockquoteBorderWidth = _blockquoteBorderWidth;
   copy->_blockquoteGapWidth = _blockquoteGapWidth;
   copy->_blockquoteBackgroundColor = [_blockquoteBackgroundColor copy];
+  copy->_blockquotePaddingTop = _blockquotePaddingTop;
+  copy->_blockquotePaddingBottom = _blockquotePaddingBottom;
   copy->_listStyleFontSize = _listStyleFontSize;
   copy->_listStyleFontFamily = [_listStyleFontFamily copy];
   copy->_listStyleFontWeight = [_listStyleFontWeight copy];
@@ -1648,6 +1652,26 @@ static inline NSString *normalizedFontWeight(NSString *fontWeight)
 - (void)setBlockquoteBackgroundColor:(RCTUIColor *)newValue
 {
   _blockquoteBackgroundColor = newValue;
+}
+
+- (CGFloat)blockquotePaddingTop
+{
+  return _blockquotePaddingTop;
+}
+
+- (void)setBlockquotePaddingTop:(CGFloat)newValue
+{
+  _blockquotePaddingTop = newValue;
+}
+
+- (CGFloat)blockquotePaddingBottom
+{
+  return _blockquotePaddingBottom;
+}
+
+- (void)setBlockquotePaddingBottom:(CGFloat)newValue
+{
+  _blockquotePaddingBottom = newValue;
 }
 
 // List style properties (combined for both ordered and unordered lists)

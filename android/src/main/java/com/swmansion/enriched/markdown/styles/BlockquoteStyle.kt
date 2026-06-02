@@ -14,6 +14,8 @@ data class BlockquoteStyle(
   val borderWidth: Float,
   val gapWidth: Float,
   val backgroundColor: Int?,
+  val paddingTop: Float,
+  val paddingBottom: Float,
 ) : BaseBlockStyle {
   companion object {
     fun fromReadableMap(
@@ -32,6 +34,10 @@ data class BlockquoteStyle(
       val borderWidth = parser.toPixelFromDIP(map.getDouble("borderWidth").toFloat())
       val gapWidth = parser.toPixelFromDIP(map.getDouble("gapWidth").toFloat())
       val backgroundColor = parser.parseOptionalColor(map, "backgroundColor")
+      val paddingTop =
+        parser.toPixelFromDIP(parser.parseOptionalDouble(map, "paddingTop", 0.0).toFloat())
+      val paddingBottom =
+        parser.toPixelFromDIP(parser.parseOptionalDouble(map, "paddingBottom", 0.0).toFloat())
 
       return BlockquoteStyle(
         fontSize,
@@ -45,6 +51,8 @@ data class BlockquoteStyle(
         borderWidth,
         gapWidth,
         backgroundColor,
+        paddingTop,
+        paddingBottom,
       )
     }
   }

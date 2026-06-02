@@ -8,6 +8,7 @@ import android.text.SpannableString
 import android.text.StaticLayout
 import android.text.TextPaint
 import android.util.Log
+import android.view.View
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.uimanager.PixelUtil
 import com.facebook.yoga.YogaMeasureMode
@@ -405,10 +406,9 @@ object MeasurementStore {
           is RenderedSegment.Text -> {
             segment.styledText.replaceMathSpansWithPlaceholders(context)
 
-            val layout = createStaticLayout(segment.styledText, fontSize, widthPx)
-            totalHeightPx += layout.height
-
-            val segmentMaxLineWidth = (0 until layout.lineCount).maxOfOrNull { layout.getLineWidth(it) } ?: 0f
+            val (segmentHeight, segmentMaxLineWidth) =
+              measureTextSegmentWithTextView(context, segment.styledText, widthPx)
+            totalHeightPx += segmentHeight
             maxContentWidthPx = maxOf(maxContentWidthPx, ceil(segmentMaxLineWidth))
 
             if (includeBottomMargin) {
@@ -448,6 +448,33 @@ object MeasurementStore {
       Log.w(TAG, "Split measurement failed, falling back", e)
       measureAndCache(context, id, width, props, allowFontScaling, fontScale, maxFontSizeMultiplier)
     }
+  }
+
+  /**
+   * Measure text segments with the same TextView path used at layout time so Yoga height
+   * matches rendered height when custom markdownStyle spans are applied.
+   */
+  private fun measureTextSegmentWithTextView(
+    context: Context,
+    styledText: CharSequence,
+    widthPx: Int,
+  ): Pair<Float, Float> {
+    val textView = EnrichedMarkdownInternalText(context)
+    textView.applyStyledText(styledText)
+
+    val widthSpec = View.MeasureSpec.makeMeasureSpec(widthPx, View.MeasureSpec.EXACTLY)
+    val heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+    textView.measure(widthSpec, heightSpec)
+
+    val layout = textView.layout
+    val maxLineWidth =
+      if (layout != null && layout.lineCount > 0) {
+        (0 until layout.lineCount).maxOf { layout.getLineWidth(it) }
+      } else {
+        widthPx.toFloat()
+      }
+
+    return textView.measuredHeight.toFloat() to maxLineWidth
   }
 
   private fun createStaticLayout(
