@@ -19,6 +19,7 @@ import com.swmansion.enriched.markdown.utils.text.view.cancelJSTouchForLinkTap
 import com.swmansion.enriched.markdown.utils.text.view.createSelectionActionModeCallback
 import com.swmansion.enriched.markdown.utils.text.view.setupAsMarkdownTextView
 import com.swmansion.enriched.markdown.views.BlockSegmentView
+import kotlin.math.ceil
 
 class EnrichedMarkdownInternalText
   @JvmOverloads
@@ -39,7 +40,7 @@ class EnrichedMarkdownInternalText
         checkboxTouchHelper.onCheckboxTap = value
       }
 
-    override val segmentMarginBottom: Int get() = lastElementMarginBottom.toInt()
+    override val segmentMarginBottom: Int get() = ceil(lastElementMarginBottom).toInt()
 
     override var spoilerOverlayDrawer: SpoilerOverlayDrawer? = null
       private set

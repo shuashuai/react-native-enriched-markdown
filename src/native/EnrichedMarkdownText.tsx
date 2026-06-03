@@ -15,6 +15,7 @@ import type {
   LinkPressEvent,
   LinkLongPressEvent,
   TaskListItemPressEvent,
+  ContentHeightChangeEvent,
   OnContextMenuItemPressEvent,
 } from '../types/events';
 
@@ -41,6 +42,7 @@ export const EnrichedMarkdownText = ({
   onLinkPress,
   onLinkLongPress,
   onTaskListItemPress,
+  onContentHeightChange,
   enableLinkPreview,
   selectable = true,
   md4cFlags = defaultMd4cFlags,
@@ -135,6 +137,14 @@ export const EnrichedMarkdownText = ({
     [onTaskListItemPress]
   );
 
+  const handleContentHeightChange = useCallback(
+    (e: NativeSyntheticEvent<ContentHeightChangeEvent>) => {
+      const { height } = e.nativeEvent;
+      onContentHeightChange?.({ height });
+    },
+    [onContentHeightChange]
+  );
+
   const tableMode = streamingConfig?.tableMode ?? 'progressive';
   const normalizedStreamingConfig = useMemo(() => ({ tableMode }), [tableMode]);
   const normalizedSelectionMenuConfig = useMemo(
@@ -170,7 +180,14 @@ export const EnrichedMarkdownText = ({
   };
 
   if (flavor === 'github') {
-    return <EnrichedMarkdownNativeComponent {...sharedProps} />;
+    return (
+      <EnrichedMarkdownNativeComponent
+        {...sharedProps}
+        onContentHeightChange={
+          onContentHeightChange ? handleContentHeightChange : undefined
+        }
+      />
+    );
   }
 
   return <EnrichedMarkdownTextNativeComponent {...sharedProps} />;

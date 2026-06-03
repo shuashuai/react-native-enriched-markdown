@@ -9,7 +9,10 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.uimanager.PixelUtil
+import com.facebook.react.uimanager.StateWrapper
 import com.swmansion.enriched.markdown.parser.Md4cFlags
 import com.swmansion.enriched.markdown.parser.Parser
 import com.swmansion.enriched.markdown.spoiler.SpoilerOverlay
@@ -20,6 +23,7 @@ import com.swmansion.enriched.markdown.utils.common.RenderedSegment
 import com.swmansion.enriched.markdown.utils.common.SegmentReconciler
 import com.swmansion.enriched.markdown.utils.common.StreamingMarkdownFilter
 import com.swmansion.enriched.markdown.utils.common.TableStreamingMode
+import com.swmansion.enriched.markdown.utils.common.emitContentHeightChange
 import com.swmansion.enriched.markdown.utils.common.isReducedMotionEnabled
 import com.swmansion.enriched.markdown.utils.common.splitASTIntoSegments
 import com.swmansion.enriched.markdown.utils.text.TailFadeInAnimator
@@ -30,6 +34,7 @@ import com.swmansion.enriched.markdown.views.TableContainerView
 import java.util.EnumSet
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import kotlin.math.abs
 
 class EnrichedMarkdown
   @JvmOverloads
@@ -98,6 +103,10 @@ class EnrichedMarkdown
 
     fun setMarkdownContent(markdown: String) {
       if (currentMarkdown == markdown) return
+      if (id != NO_ID) {
+        MeasurementStore.clearSplitLayoutHeight(id)
+      }
+      lastReportedHeightDip = 0f
       currentMarkdown = markdown
       renderPending = true
     }
@@ -318,13 +327,46 @@ class EnrichedMarkdown
 
       if (width > 0) {
         val heightBefore = computeSegmentsTotalHeight()
-        layoutSegments()
-        val heightAfter = computeSegmentsTotalHeight()
+        val contentHeightPx = layoutSegments()
+        val heightAfter =
+          if (contentHeightPx > 0) contentHeightPx else computeSegmentsTotalHeight()
 
         if (forceHeight || topologyChanged || heightBefore != heightAfter) {
           MeasurementStore.invalidate(id)
           requestLayout()
         }
+        invalidateLayoutAfterRender(contentHeightPx)
+      }
+    }
+
+    private var lastReportedHeightDip = 0f
+    private var heightRecalculationCounter = 0
+
+    var stateWrapper: StateWrapper? = null
+
+    private fun invalidateLayoutAfterRender(contentHeightPx: Int) {
+      if (contentHeightPx <= 0 || width <= 0 || id == NO_ID) return
+
+      MeasurementStore.storeSplitLayoutHeight(id, width.toFloat(), contentHeightPx.toFloat())
+
+      stateWrapper?.let { wrapper ->
+        val state = Arguments.createMap()
+        state.putInt("heightRecalculationCounter", ++heightRecalculationCounter)
+        wrapper.updateState(state)
+      }
+
+      val heightDip = PixelUtil.toDIPFromPixel(contentHeightPx.toFloat())
+      if (abs(heightDip - lastReportedHeightDip) < 0.5f) return
+
+      lastReportedHeightDip = heightDip
+      emitContentHeightChange(this, heightDip)
+    }
+
+    private fun notifyChildSegmentHeightChanged() {
+      post {
+        if (width <= 0 || id == NO_ID || segmentViews.isEmpty()) return@post
+        val contentHeightPx = layoutSegments()
+        invalidateLayoutAfterRender(contentHeightPx)
       }
     }
 
@@ -434,6 +476,10 @@ class EnrichedMarkdown
         }
 
         applySelectionColors(selectionColor, selectionHandleColor)
+
+        addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+          notifyChildSegmentHeightChanged()
+        }
       }
 
     private fun createTableView(
@@ -481,12 +527,16 @@ class EnrichedMarkdown
       r: Int,
       b: Int,
     ) {
-      layoutSegments()
+      val contentHeightPx = layoutSegments()
+      if (contentHeightPx > 0 && width > 0 && id != NO_ID) {
+        MeasurementStore.storeSplitLayoutHeight(id, width.toFloat(), contentHeightPx.toFloat())
+        invalidateLayoutAfterRender(contentHeightPx)
+      }
     }
 
-    private fun layoutSegments() {
+    private fun layoutSegments(): Int {
       val containerWidth = width
-      if (containerWidth <= 0) return
+      if (containerWidth <= 0) return 0
 
       var currentY = 0
       val lastIndex = segmentViews.lastIndex
@@ -507,6 +557,8 @@ class EnrichedMarkdown
           currentY += segment?.segmentMarginBottom ?: 0
         }
       }
+
+      return currentY
     }
 
     private fun computeSegmentsTotalHeight(): Int {

@@ -4,7 +4,9 @@ import android.content.Context
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.module.annotations.ReactModule
+import com.facebook.react.uimanager.ReactStylesDiffMap
 import com.facebook.react.uimanager.SimpleViewManager
+import com.facebook.react.uimanager.StateWrapper
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.ViewManagerDelegate
 import com.facebook.react.uimanager.annotations.ReactProp
@@ -49,11 +51,21 @@ class EnrichedMarkdownManager :
   override fun onDropViewInstance(view: EnrichedMarkdown) {
     super.onDropViewInstance(view)
     view.cleanup()
+    MeasurementStore.clearFontScalingSettings(view.id)
     MeasurementStore.release(view.id)
     MeasurementStore.clearStreamingTableMode(view.id)
   }
 
   override fun getExportedCustomDirectEventTypeConstants(): MutableMap<String, Any> = markdownEventTypeConstants()
+
+  override fun updateState(
+    view: EnrichedMarkdown,
+    props: ReactStylesDiffMap?,
+    stateWrapper: StateWrapper?,
+  ): Any? {
+    view.stateWrapper = stateWrapper
+    return super.updateState(view, props, stateWrapper)
+  }
 
   @ReactProp(name = "markdown")
   override fun setMarkdown(

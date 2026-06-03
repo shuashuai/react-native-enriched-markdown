@@ -235,6 +235,10 @@ export interface OnContextMenuItemPressEvent {
   selectionEnd: CodegenTypes.Int32;
 }
 
+export interface ContentHeightChangeEvent {
+  height: CodegenTypes.Double;
+}
+
 /**
  * MD4C parser flags configuration.
  * Controls how the markdown parser interprets certain syntax.
@@ -390,6 +394,10 @@ export interface NativeProps extends ViewProps {
    * Receives the item label, the currently selected text, and the selection range.
    */
   onContextMenuItemPress?: CodegenTypes.BubblingEventHandler<OnContextMenuItemPressEvent>;
+  /**
+   * Android github flavor: fired after native layout with the measured content height (dp).
+   */
+  onContentHeightChange?: CodegenTypes.DirectEventHandler<ContentHeightChangeEvent>;
 }
 
 export default codegenNativeComponent<NativeProps>('EnrichedMarkdown', {

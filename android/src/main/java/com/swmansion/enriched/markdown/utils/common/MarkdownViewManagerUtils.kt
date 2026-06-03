@@ -4,6 +4,7 @@ import android.view.View
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.uimanager.UIManagerHelper
+import com.swmansion.enriched.markdown.events.ContentHeightChangeEvent
 import com.swmansion.enriched.markdown.events.ContextMenuItemPressEvent
 import com.swmansion.enriched.markdown.events.LinkLongPressEvent
 import com.swmansion.enriched.markdown.events.LinkPressEvent
@@ -20,6 +21,8 @@ fun markdownEventTypeConstants(): MutableMap<String, Any> {
     mapOf("registrationName" to TaskListItemPressEvent.EVENT_NAME)
   map[ContextMenuItemPressEvent.EVENT_NAME] =
     mapOf("registrationName" to ContextMenuItemPressEvent.EVENT_NAME)
+  map[ContentHeightChangeEvent.EVENT_NAME] =
+    mapOf("registrationName" to "onContentHeightChange")
   return map
 }
 
@@ -77,6 +80,16 @@ fun emitContextMenuItemPress(
       selectionEnd,
     ),
   )
+}
+
+fun emitContentHeightChange(
+  view: View,
+  heightDip: Float,
+) {
+  val context = view.context as com.facebook.react.bridge.ReactContext
+  val surfaceId = UIManagerHelper.getSurfaceId(context)
+  val eventDispatcher = UIManagerHelper.getEventDispatcherForReactTag(context, view.id)
+  eventDispatcher?.dispatchEvent(ContentHeightChangeEvent(surfaceId, view.id, heightDip))
 }
 
 fun parseMd4cFlags(flags: ReadableMap?): Md4cFlags =

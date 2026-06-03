@@ -40,8 +40,8 @@ class TableContainerView(
   BlockSegmentView {
   private val tableStyle: TableStyle = styleConfig.tableStyle
 
-  override val segmentMarginTop: Int get() = tableStyle.marginTop.toInt()
-  override val segmentMarginBottom: Int get() = tableStyle.marginBottom.toInt()
+  override val segmentMarginTop: Int get() = ceil(tableStyle.marginTop).toInt()
+  override val segmentMarginBottom: Int get() = ceil(tableStyle.marginBottom).toInt()
   private val density = resources.displayMetrics.density
   private val isRtl = resources.isLayoutRTL()
 

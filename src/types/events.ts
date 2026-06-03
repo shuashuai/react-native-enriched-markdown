@@ -30,3 +30,7 @@ export interface OnContextMenuItemPressEvent {
   selectionStart: number;
   selectionEnd: number;
 }
+
+export interface ContentHeightChangeEvent {
+  height: number;
+}

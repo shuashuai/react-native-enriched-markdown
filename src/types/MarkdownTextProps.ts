@@ -4,6 +4,7 @@ import type {
   LinkPressEvent,
   LinkLongPressEvent,
   TaskListItemPressEvent,
+  ContentHeightChangeEvent,
 } from './events';
 
 /**
@@ -94,6 +95,11 @@ export interface EnrichedMarkdownTextProps extends Omit<ViewProps, 'style'> {
    * @platform ios, android, web
    */
   onTaskListItemPress?: (event: TaskListItemPressEvent) => void;
+  /**
+   * Android github flavor: native reports measured content height (dp) after layout.
+   * @platform android
+   */
+  onContentHeightChange?: (event: ContentHeightChangeEvent) => void;
   /**
    * Controls whether the system link preview is shown on long press (iOS only).
    *

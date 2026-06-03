@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Typeface
 import android.graphics.text.LineBreaker
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.text.SpannableString
 import android.text.StaticLayout
 import android.text.TextPaint
@@ -32,7 +34,10 @@ import com.swmansion.enriched.markdown.utils.common.splitASTIntoSegments
 import com.swmansion.enriched.markdown.utils.text.extensions.replaceMathSpansWithPlaceholders
 import com.swmansion.enriched.markdown.views.TableContainerView
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.math.ceil
+import kotlin.math.min
 
 /**
  * Manages text measurements for ShadowNode layout.
@@ -40,6 +45,11 @@ import kotlin.math.ceil
  */
 object MeasurementStore {
   private const val TAG = "MeasurementStore"
+  private const val TEXT_MEASURE_BASE_TIMEOUT_MS = 500L
+  private const val TEXT_MEASURE_TIMEOUT_PER_1K_CHARS_MS = 200L
+  private const val TEXT_MEASURE_MAX_TIMEOUT_MS = 3000L
+
+  private val mainHandler = Handler(Looper.getMainLooper())
 
   private data class PaintParams(
     val typeface: Typeface,
@@ -65,6 +75,14 @@ object MeasurementStore {
   private val fontScalingSettings = ConcurrentHashMap<Int, FontScalingSettings>()
 
   private val streamingTableModes = ConcurrentHashMap<Int, TableStreamingMode>()
+
+  private data class SplitLayoutCache(
+    val cachedWidth: Float,
+    val totalHeightPx: Float,
+  )
+
+  /** Post-render layout height from EnrichedMarkdown.layoutSegments (github flavor). */
+  private val splitLayoutCache = ConcurrentHashMap<Int, SplitLayoutCache>()
 
   private fun resolveFontScalingSettings(
     viewId: Int?,
@@ -108,6 +126,29 @@ object MeasurementStore {
 
   fun release(id: Int) {
     data.remove(id)
+    splitLayoutCache.remove(id)
+  }
+
+  fun clearSplitLayoutHeight(viewId: Int) {
+    splitLayoutCache.remove(viewId)
+  }
+
+  fun storeSplitLayoutHeight(
+    viewId: Int,
+    width: Float,
+    totalHeightPx: Float,
+  ) {
+    if (totalHeightPx <= 0f || width <= 0f) return
+    splitLayoutCache[viewId] = SplitLayoutCache(width, totalHeightPx)
+  }
+
+  private fun getSplitLayoutHeight(
+    viewId: Int?,
+    width: Float,
+  ): Float? {
+    val cached = viewId?.let { splitLayoutCache[it] } ?: return null
+    if (ceil(cached.cachedWidth).toInt() != ceil(width).toInt()) return null
+    return cached.totalHeightPx
   }
 
   fun invalidate(id: Int) {
@@ -360,6 +401,12 @@ object MeasurementStore {
     val allowTrailingMargin = props.getBooleanOrDefault("allowTrailingMargin", false)
     val fontSize = getInitialFontSize(styleMap, context, allowFontScaling, fontScale, maxFontSizeMultiplier)
 
+    getSplitLayoutHeight(id, width)?.let { cachedHeightPx ->
+      val measuredWidthDip = PixelUtil.toDIPFromPixel(width)
+      val totalHeightDip = PixelUtil.toDIPFromPixel(cachedHeightPx)
+      return YogaMeasureOutput.make(measuredWidthDip, totalHeightDip)
+    }
+
     return try {
       val ast =
         Parser.shared.parseMarkdown(markdown, md4cFlags)
@@ -412,16 +459,16 @@ object MeasurementStore {
             maxContentWidthPx = maxOf(maxContentWidthPx, ceil(segmentMaxLineWidth))
 
             if (includeBottomMargin) {
-              totalHeightPx += segment.lastElementMarginBottom
+              totalHeightPx += ceil(segment.lastElementMarginBottom)
             }
           }
 
           is RenderedSegment.Table -> {
-            totalHeightPx += style.tableStyle.marginTop
+            totalHeightPx += ceil(style.tableStyle.marginTop)
             totalHeightPx += TableContainerView.measureTableNodeHeight(segment.node, style, context)
             maxContentWidthPx = width
             if (includeBottomMargin) {
-              totalHeightPx += style.tableStyle.marginBottom
+              totalHeightPx += ceil(style.tableStyle.marginBottom)
             }
           }
 
@@ -455,6 +502,43 @@ object MeasurementStore {
    * matches rendered height when custom markdownStyle spans are applied.
    */
   private fun measureTextSegmentWithTextView(
+    context: Context,
+    styledText: CharSequence,
+    widthPx: Int,
+  ): Pair<Float, Float> {
+    if (Looper.myLooper() == Looper.getMainLooper()) {
+      return measureTextSegmentWithTextViewOnCurrentThread(context, styledText, widthPx)
+    }
+
+    val result = arrayOfNulls<Pair<Float, Float>>(1)
+    val latch = CountDownLatch(1)
+    val timeoutMs = textMeasureTimeoutMs(styledText.length)
+
+    mainHandler.post {
+      result[0] =
+        runCatching {
+          measureTextSegmentWithTextViewOnCurrentThread(context, styledText, widthPx)
+        }.getOrNull()
+      latch.countDown()
+    }
+
+    val completed = latch.await(timeoutMs, TimeUnit.MILLISECONDS)
+    if (!completed || result[0] == null) {
+      Log.w(
+        TAG,
+        "Text segment measure timed out or failed on main thread (length=${styledText.length}, timeoutMs=$timeoutMs)",
+      )
+    }
+
+    return result[0] ?: (0f to widthPx.toFloat())
+  }
+
+  private fun textMeasureTimeoutMs(textLength: Int): Long {
+    val extra = (textLength / 1000) * TEXT_MEASURE_TIMEOUT_PER_1K_CHARS_MS
+    return min(TEXT_MEASURE_BASE_TIMEOUT_MS + extra, TEXT_MEASURE_MAX_TIMEOUT_MS)
+  }
+
+  private fun measureTextSegmentWithTextViewOnCurrentThread(
     context: Context,
     styledText: CharSequence,
     widthPx: Int,
