@@ -1,5 +1,5 @@
 {
-  "name": "react-native-enriched-markdown",
+  "name": "@code_shuai/react-native-enriched-markdown",
   "version": "0.6.0",
   "description": "Markdown Text component for React Native",
   "main": "./lib/module/index",
@@ -73,16 +73,17 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/software-mansion-labs/react-native-enriched-markdown.git"
+    "url": "git+https://github.com/shuashuai/react-native-enriched-markdown.git"
   },
-  "author": "Gregory Moskaliuk <mosckalyuck@gmail.com> (https://github.com/hryhoriiK97)",
+  "author": "code_shuai",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/software-mansion-labs/react-native-enriched-markdown/issues"
   },
   "homepage": "https://github.com/software-mansion-labs/react-native-enriched-markdown#readme",
   "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^19.8.1",

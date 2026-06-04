@@ -7,9 +7,9 @@
     "start": "react-native start"
   },
   "dependencies": {
+    "@code_shuai/react-native-enriched-markdown": "workspace:*",
     "react": "19.1.4",
     "react-native": "0.81.6",
-    "react-native-enriched-markdown": "*",
     "react-native-macos": "0.81.4"
   },
   "devDependencies": {
