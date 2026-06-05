@@ -22,10 +22,20 @@ class ParagraphRenderer(
   ) {
     val context = factory.blockStyleContext
 
-    // If nested (e.g., inside a list or blockquote), render content simply with a newline
+    // Inside lists/blockquotes: no block margins, but blockquote paragraphs still need
+    // per-paragraph line height (same strategy as ListRenderer inside blockquotes).
     if (context.isInsideBlockElement()) {
+      val paraStart = builder.length
       factory.renderChildren(node, builder, onLinkPress, onLinkLongPress)
       builder.append("\n")
+      if (context.blockquoteDepth > 0) {
+        applyLineHeightSkippingImages(
+          builder,
+          paraStart,
+          builder.length,
+          config.style.blockquoteStyle.lineHeight,
+        )
+      }
       return
     }
 

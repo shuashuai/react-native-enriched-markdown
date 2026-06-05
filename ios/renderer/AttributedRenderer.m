@@ -1,4 +1,5 @@
 #import "AttributedRenderer.h"
+#import "BlockquoteBorder.h"
 #import "CodeBlockBackground.h"
 #import "LastElementUtils.h"
 #import "MarkdownASTNode.h"
@@ -78,6 +79,10 @@
     if (style) {
       _lastElementMarginBottom = MAX(_lastElementMarginBottom, style.paragraphSpacing);
     }
+    NSNumber *marginMarker = [output attribute:BlockquoteMarginBottomAttributeName atIndex:i effectiveRange:NULL];
+    if (marginMarker) {
+      _lastElementMarginBottom = MAX(_lastElementMarginBottom, [marginMarker floatValue]);
+    }
     i = NSMaxRange(attrRange);
   }
 
@@ -100,10 +105,19 @@
     NSParagraphStyle *style = [output attribute:NSParagraphStyleAttributeName
                                         atIndex:lastContent.location
                                  effectiveRange:&styleRange];
+    BOOL isBlockquote = [output attribute:BlockquoteDepthAttributeName
+                                   atIndex:lastContent.location
+                            effectiveRange:NULL] != nil;
 
     if (style) {
       NSMutableParagraphStyle *mutableStyle = [style mutableCopy];
-      mutableStyle.paragraphSpacing = 0;
+      if (isBlockquote) {
+        // Bottom padding spacer newlines are stripped at document end; fold padding
+        // into the last content paragraph without touching marginBottom.
+        mutableStyle.paragraphSpacing = [_config blockquotePaddingBottom];
+      } else {
+        mutableStyle.paragraphSpacing = 0;
+      }
       mutableStyle.paragraphSpacingBefore = 0;
 
       if (isLastElementImage(output)) {

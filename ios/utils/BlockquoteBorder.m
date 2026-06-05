@@ -5,6 +5,8 @@
 // Attribute constants for identifying blockquote segments in text storage
 NSString *const BlockquoteDepthAttributeName = @"BlockquoteDepth";
 NSString *const BlockquoteBackgroundColorAttributeName = @"BlockquoteBackgroundColor";
+NSString *const BlockquoteBottomPaddingAttributeName = @"BlockquoteBottomPadding";
+NSString *const BlockquoteMarginBottomAttributeName = @"BlockquoteMarginBottom";
 
 @implementation BlockquoteBorder {
   StyleConfig *_config;
@@ -69,14 +71,49 @@ NSString *const BlockquoteBackgroundColorAttributeName = @"BlockquoteBackgroundC
 
                                  NSInteger depth = [depthNum integerValue];
                                  CGFloat baseY = origin.y + rect.origin.y;
+                                 CGFloat fillHeight = MAX(rect.size.height, usedRect.size.height);
+
+                                 // Markers can sit on the trailing \n, not the first char of the line.
+                                 NSNumber *bottomPadding = nil;
+                                 NSParagraphStyle *paragraphStyle = attrs[NSParagraphStyleAttributeName];
+                                 NSUInteger charRangeEnd = NSMaxRange(charRange);
+                                 for (NSUInteger idx = charRange.location; idx < charRangeEnd; idx++) {
+                                   NSNumber *marker = [textStorage attribute:BlockquoteBottomPaddingAttributeName
+                                                                     atIndex:idx
+                                                              effectiveRange:NULL];
+                                   if (marker) {
+                                     bottomPadding = marker;
+                                     NSParagraphStyle *markerStyle =
+                                         [textStorage attribute:NSParagraphStyleAttributeName
+                                                        atIndex:idx
+                                                 effectiveRange:NULL];
+                                     if (markerStyle) {
+                                       paragraphStyle = markerStyle;
+                                     }
+                                     break;
+                                   }
+                                 }
+
+                                 if (bottomPadding) {
+                                   CGFloat paddingValue = [bottomPadding floatValue];
+                                   if (paragraphStyle.paragraphSpacing > 0) {
+                                     fillHeight += paragraphStyle.paragraphSpacing;
+                                   } else if (paragraphStyle.minimumLineHeight > 0) {
+                                     fillHeight = MAX(fillHeight, paragraphStyle.minimumLineHeight);
+                                   } else {
+                                     fillHeight = MAX(fillHeight, paddingValue);
+                                   }
+                                 } else if (paragraphStyle.paragraphSpacing > 0) {
+                                   // Document-end fallback after trailing newlines are trimmed.
+                                   fillHeight += paragraphStyle.paragraphSpacing;
+                                 }
 
                                  // 1. Draw Background (Painter's algorithm: draw backgrounds before borders)
                                  RCTUIColor *bgColor = attrs[BlockquoteBackgroundColorAttributeName] ?: defaultBgColor;
                                  if (bgColor && bgColor != [RCTUIColor clearColor]) {
                                    CGContextRef ctx = UIGraphicsGetCurrentContext();
                                    [bgColor setFill];
-                                   CGContextFillRect(ctx,
-                                                     CGRectMake(origin.x, baseY, containerWidth, rect.size.height));
+                                   CGContextFillRect(ctx, CGRectMake(origin.x, baseY, containerWidth, fillHeight));
                                  }
 
                                  // 2. Aggregate vertical borders into the batch path
@@ -84,7 +121,7 @@ NSString *const BlockquoteBackgroundColorAttributeName = @"BlockquoteBackgroundC
                                    CGFloat borderX =
                                        isRTL ? origin.x + containerWidth - borderWidth - (levelSpacing * level)
                                              : origin.x + (levelSpacing * level);
-                                   CGRect borderRect = CGRectMake(borderX, baseY, borderWidth, rect.size.height);
+                                   CGRect borderRect = CGRectMake(borderX, baseY, borderWidth, fillHeight);
                                    UIBezierPathAppendPath(borderPath, [UIBezierPath bezierPathWithRect:borderRect]);
                                  }
                                }];

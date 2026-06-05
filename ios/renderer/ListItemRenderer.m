@@ -65,8 +65,13 @@ NSString *const TaskIndexAttribute = @"TaskIndex";
                                   : (context.listType == ListTypeOrdered) ? [_config effectiveListMarginLeftForNumber]
                                                                           : [_config effectiveListMarginLeftForBullet];
 
-  const CGFloat totalIndent =
-      baseMarkerWidth + [_config effectiveListGapWidth] + (nestingLevel * [_config listStyleMarginLeft]);
+  CGFloat blockquoteIndent = 0;
+  if (context.blockquoteDepth > 0) {
+    blockquoteIndent = context.blockquoteDepth * ([_config blockquoteBorderWidth] + [_config blockquoteGapWidth]);
+  }
+
+  const CGFloat totalIndent = baseMarkerWidth + [_config effectiveListGapWidth] +
+                              (nestingLevel * [_config listStyleMarginLeft]) + blockquoteIndent;
 
   const CGFloat lineHeightConfig = [_config listStyleLineHeight];
 

@@ -6,6 +6,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 extern NSString *const BlockquoteDepthAttributeName;
 extern NSString *const BlockquoteBackgroundColorAttributeName;
+extern NSString *const BlockquoteBottomPaddingAttributeName;
+extern NSString *const BlockquoteMarginBottomAttributeName;
 
 @interface BlockquoteBorder : NSObject
 

@@ -15,3 +15,7 @@ const val SPAN_FLAGS_EXCLUSIVE_EXCLUSIVE = SpannableString.SPAN_EXCLUSIVE_EXCLUS
  */
 const val SPAN_FLAGS_CONTAINER_BACKGROUND =
   Spanned.SPAN_EXCLUSIVE_EXCLUSIVE or Spanned.SPAN_PRIORITY
+
+/** Highest-priority line metrics so padding spacers keep their fixed height. */
+const val SPAN_FLAGS_LINE_METRICS =
+  SPAN_FLAGS_EXCLUSIVE_EXCLUSIVE or Spanned.SPAN_PRIORITY

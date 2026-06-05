@@ -4,6 +4,7 @@ import android.content.Context
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import com.swmansion.enriched.markdown.parser.MarkdownASTNode
+import com.swmansion.enriched.markdown.spans.BlockquoteBottomPaddingSpan
 import com.swmansion.enriched.markdown.spans.ImageSpan
 import com.swmansion.enriched.markdown.spans.MarginBottomSpan
 import com.swmansion.enriched.markdown.styles.StyleConfig
@@ -69,7 +70,18 @@ class Renderer {
         .getSpans(0, builder.length, MarginBottomSpan::class.java)
         .maxByOrNull { builder.getSpanEnd(it) }
 
-    lastElementMarginBottom = lastSpan?.marginBottom ?: 0f
+    val lastContentIndex = builder.indexOfLast { it != '\n' }
+    val blockquotePaddingSpan =
+      if (lastContentIndex >= 0) {
+        builder
+          .getSpans(lastContentIndex, lastContentIndex + 1, BlockquoteBottomPaddingSpan::class.java)
+          .firstOrNull()
+      } else {
+        null
+      }
+
+    lastElementMarginBottom =
+      (lastSpan?.marginBottom ?: 0f) + (blockquotePaddingSpan?.padding ?: 0f)
 
     // Trim trailing newlines
     while (builder.endsWith('\n')) {
