@@ -45,7 +45,8 @@ class BlockquoteRenderer(
     var contentEnd = builder.length
     while (contentEnd > start + 1 &&
       builder[contentEnd - 1] == '\n' &&
-      builder[contentEnd - 2] == '\n') {
+      builder[contentEnd - 2] == '\n'
+    ) {
       builder.delete(contentEnd - 1, contentEnd)
       contentEnd--
     }
