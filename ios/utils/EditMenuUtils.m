@@ -1,4 +1,5 @@
 #import "EditMenuUtils.h"
+#import "ENRMLocalization.h"
 #import "PasteboardUtils.h"
 #import "StyleConfig.h"
 #include <TargetConditionals.h>
@@ -12,7 +13,7 @@ static NSString *const kActionIdentifierCopyImageURL = @"com.swmansion.enriched.
 
 static UIAction *createCopyAction(NSAttributedString *selectedText, NSString *markdown, StyleConfig *styleConfig)
 {
-  return [UIAction actionWithTitle:@"Copy"
+  return [UIAction actionWithTitle:ENRMLocalizedString(@"enrm_copy")
                              image:[RCTUIImage systemImageNamed:@"doc.on.doc"]
                         identifier:kActionIdentifierCopy
                            handler:^(__kindof UIAction *action) {
@@ -25,7 +26,7 @@ static UIAction *_Nullable createCopyMarkdownAction(NSString *markdown)
   if (markdown.length == 0)
     return nil;
 
-  return [UIAction actionWithTitle:@"Copy as Markdown"
+  return [UIAction actionWithTitle:ENRMLocalizedString(@"enrm_copy_as_markdown")
                              image:[RCTUIImage systemImageNamed:@"doc.text"]
                         identifier:kActionIdentifierCopyMarkdown
                            handler:^(__kindof UIAction *action) { copyStringToPasteboard(markdown); }];
@@ -37,9 +38,9 @@ static UIAction *_Nullable createCopyImageURLAction(NSArray<NSString *> *imageUR
     return nil;
 
   NSString *urlsToCopy = [imageURLs componentsJoinedByString:@"\n"];
-  NSString *title = (imageURLs.count == 1)
-                        ? @"Copy Image URL"
-                        : [NSString stringWithFormat:@"Copy %lu Image URLs", (unsigned long)imageURLs.count];
+  NSString *title = (imageURLs.count == 1) ? ENRMLocalizedString(@"enrm_copy_image_url")
+                                           : [NSString stringWithFormat:ENRMLocalizedString(@"enrm_copy_image_urls"),
+                                                                        (unsigned long)imageURLs.count];
 
   return [UIAction actionWithTitle:title
                              image:[RCTUIImage systemImageNamed:@"link"]

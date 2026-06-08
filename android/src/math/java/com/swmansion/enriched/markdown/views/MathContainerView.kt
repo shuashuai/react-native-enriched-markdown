@@ -15,6 +15,7 @@ import com.swmansion.enriched.markdown.spans.MathMeasureRequest
 import com.swmansion.enriched.markdown.spans.MathRenderMode
 import com.swmansion.enriched.markdown.styles.MathStyle
 import com.swmansion.enriched.markdown.styles.StyleConfig
+import com.swmansion.enriched.markdown.utils.common.ENRMLocalization
 
 class MathContainerView(
   context: Context,
@@ -86,10 +87,10 @@ class MathContainerView(
   private fun showContextMenu(anchor: View) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     ContextMenuPopup.show(anchor, this) {
-      item(ContextMenuPopup.Icon.COPY, "Copy") {
+      item(ContextMenuPopup.Icon.COPY, ENRMLocalization.copy(context)) {
         clipboard.setPrimaryClip(ClipData.newPlainText("Math", cachedLatex))
       }
-      item(ContextMenuPopup.Icon.DOCUMENT, "Copy as Markdown") {
+      item(ContextMenuPopup.Icon.DOCUMENT, ENRMLocalization.copyAsMarkdown(context)) {
         clipboard.setPrimaryClip(ClipData.newPlainText("Math", "$$\n$cachedLatex\n$$"))
       }
     }

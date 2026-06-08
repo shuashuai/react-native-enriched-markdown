@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="enrm_copy">复制</string>
+    <string name="enrm_copy_as_markdown">复制 Markdown</string>
+    <string name="enrm_copy_image_url">复制图片链接</string>
+    <plurals name="enrm_copy_image_urls">
+        <item quantity="other">复制 %d 个图片链接</item>
+    </plurals>
+</resources>

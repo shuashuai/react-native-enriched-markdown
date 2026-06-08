@@ -13,6 +13,7 @@ import com.swmansion.enriched.markdown.EnrichedMarkdown
 import com.swmansion.enriched.markdown.EnrichedMarkdownText
 import com.swmansion.enriched.markdown.spans.ImageSpan
 import com.swmansion.enriched.markdown.styles.StyleConfig
+import com.swmansion.enriched.markdown.utils.common.ENRMLocalization
 import com.swmansion.enriched.markdown.utils.common.layout.isLayoutRTL
 import com.swmansion.enriched.markdown.utils.text.conversion.HTMLGenerator
 import com.swmansion.enriched.markdown.utils.text.conversion.MarkdownExtractor
@@ -61,7 +62,12 @@ fun createSelectionActionModeCallback(
         textView.selectionStart >= 0 &&
         textView.selectionEnd > textView.selectionStart
       ) {
-        menu.add(Menu.NONE, MENU_ITEM_COPY_MARKDOWN, Menu.NONE, "Copy as Markdown")
+        menu.add(
+          Menu.NONE,
+          MENU_ITEM_COPY_MARKDOWN,
+          Menu.NONE,
+          ENRMLocalization.copyAsMarkdown(textView.context),
+        )
       }
 
       if (textView.selectionStart >= 0 && textView.selectionEnd > textView.selectionStart) {
@@ -82,9 +88,9 @@ fun createSelectionActionModeCallback(
       if (imageUrls.isNotEmpty()) {
         val title =
           if (imageUrls.size == 1) {
-            "Copy Image URL"
+            ENRMLocalization.copyImageUrl(textView.context)
           } else {
-            "Copy ${imageUrls.size} Image URLs"
+            ENRMLocalization.copyImageUrls(textView.context, imageUrls.size)
           }
         menu.add(Menu.NONE, MENU_ITEM_COPY_IMAGE_URL, Menu.NONE, title)
       }

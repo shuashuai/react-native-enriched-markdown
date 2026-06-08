@@ -13,8 +13,7 @@ import com.swmansion.enriched.markdown.input.EnrichedMarkdownTextInputView
 import com.swmansion.enriched.markdown.input.formatting.MarkdownSerializer
 import com.swmansion.enriched.markdown.input.model.FormattingRange
 import com.swmansion.enriched.markdown.input.model.StyleType
-
-// TODO: Wrap all user-facing strings for localization support.
+import com.swmansion.enriched.markdown.utils.common.ENRMLocalization
 
 class InputContextMenu(
   private val view: EnrichedMarkdownTextInputView,
@@ -48,7 +47,12 @@ class InputContextMenu(
           }
 
           if (view.selectionStart < view.selectionEnd) {
-            menu.add(FORMAT_MENU_GROUP_ID, MENU_COPY_MARKDOWN_ID, 101, "Copy as Markdown")
+            menu.add(
+              FORMAT_MENU_GROUP_ID,
+              MENU_COPY_MARKDOWN_ID,
+              101,
+              ENRMLocalization.copyAsMarkdown(view.context),
+            )
 
             customItemTexts.forEachIndexed { index, text ->
               menu

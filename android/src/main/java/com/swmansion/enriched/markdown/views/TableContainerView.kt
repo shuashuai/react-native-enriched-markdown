@@ -23,6 +23,7 @@ import com.swmansion.enriched.markdown.parser.MarkdownASTNode.NodeType
 import com.swmansion.enriched.markdown.renderer.Renderer
 import com.swmansion.enriched.markdown.styles.StyleConfig
 import com.swmansion.enriched.markdown.styles.TableStyle
+import com.swmansion.enriched.markdown.utils.common.ENRMLocalization
 import com.swmansion.enriched.markdown.utils.common.layout.isLayoutRTL
 import com.swmansion.enriched.markdown.utils.common.serialization.MarkdownASTSerializer
 import com.swmansion.enriched.markdown.utils.text.conversion.HTMLGenerator
@@ -279,7 +280,7 @@ class TableContainerView(
   private fun showContextMenu(anchor: View) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     ContextMenuPopup.show(anchor, this) {
-      item(ContextMenuPopup.Icon.COPY, "Copy") {
+      item(ContextMenuPopup.Icon.COPY, ENRMLocalization.copy(context)) {
         val plainText = rows.joinToString("\n") { row -> row.joinToString("\t") { it.plainText } }
         if (plainText.isNotEmpty()) {
           val displayMetrics = context.resources.displayMetrics
@@ -291,7 +292,7 @@ class TableContainerView(
           clipboard.setPrimaryClip(ClipData.newHtmlText("Table", plainText, html))
         }
       }
-      item(ContextMenuPopup.Icon.DOCUMENT, "Copy as Markdown") {
+      item(ContextMenuPopup.Icon.DOCUMENT, ENRMLocalization.copyAsMarkdown(context)) {
         if (tableMarkdown.isNotEmpty()) clipboard.setPrimaryClip(ClipData.newPlainText("Table", tableMarkdown))
       }
     }

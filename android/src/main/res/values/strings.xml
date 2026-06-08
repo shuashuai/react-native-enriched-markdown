@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="enrm_copy">Copy</string>
+    <string name="enrm_copy_as_markdown">Copy as Markdown</string>
+    <string name="enrm_copy_image_url">Copy Image URL</string>
+    <plurals name="enrm_copy_image_urls">
+        <item quantity="one">Copy %d Image URL</item>
+        <item quantity="other">Copy %d Image URLs</item>
+    </plurals>
+</resources>

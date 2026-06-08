@@ -1,9 +1,8 @@
 #import "ContextMenuUtils.h"
+#import "ENRMLocalization.h"
 #import "ENRMUIKit.h"
 #import "EnrichedMarkdownTextInput+Internal.h"
 #import "PasteboardUtils.h"
-
-// TODO: Wrap all user-facing strings with NSLocalizedString for localization support.
 
 @implementation EnrichedMarkdownTextInput (ContextMenu)
 
@@ -64,7 +63,7 @@
                                     children:formatActions];
 
   UIAction *copyMarkdownAction =
-      [UIAction actionWithTitle:@"Copy as Markdown"
+      [UIAction actionWithTitle:ENRMLocalizedString(@"enrm_copy_as_markdown")
                           image:[UIImage systemImageNamed:@"doc.text"]
                      identifier:@"com.enrichedmarkdown.copyMarkdown"
                         handler:^(__kindof UIAction *action) { [self copySelectedRangeAsMarkdown]; }];
@@ -114,7 +113,7 @@
 
   [menu addItem:[NSMenuItem separatorItem]];
 
-  NSMenuItem *copyMarkdownItem = [[NSMenuItem alloc] initWithTitle:@"Copy as Markdown"
+  NSMenuItem *copyMarkdownItem = [[NSMenuItem alloc] initWithTitle:ENRMLocalizedString(@"enrm_copy_as_markdown")
                                                             action:@selector(copySelectedRangeAsMarkdown)
                                                      keyEquivalent:@""];
   copyMarkdownItem.target = self;

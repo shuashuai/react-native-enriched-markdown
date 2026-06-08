@@ -1,5 +1,6 @@
 #import "TableContainerView.h"
 #import "AttributedRenderer.h"
+#import "ENRMLocalization.h"
 #import "HTMLGenerator.h"
 #import "LinkTapUtils.h"
 #import "MarkdownASTNode.h"
@@ -85,8 +86,8 @@
     if (!strongSelf)
       return nil;
     NSMenu *menu = [[NSMenu alloc] initWithTitle:@""];
-    [menu addItem:ENRMCreateMenuItem(NSLocalizedString(@"Copy", nil), ^{ [strongSelf copyTableToPasteboard]; })];
-    [menu addItem:ENRMCreateMenuItem(NSLocalizedString(@"Copy as Markdown", nil),
+    [menu addItem:ENRMCreateMenuItem(ENRMLocalizedString(@"enrm_copy"), ^{ [strongSelf copyTableToPasteboard]; })];
+    [menu addItem:ENRMCreateMenuItem(ENRMLocalizedString(@"enrm_copy_as_markdown"),
                                      ^{ [strongSelf copyMarkdownToPasteboard]; })];
     return menu;
   };
@@ -476,13 +477,13 @@
                   previewProvider:nil
                    actionProvider:^UIMenu *(NSArray<UIMenuElement *> *suggestedActions) {
                      UIAction *copyMarkdown =
-                         [UIAction actionWithTitle:@"Copy as Markdown"
+                         [UIAction actionWithTitle:ENRMLocalizedString(@"enrm_copy_as_markdown")
                                              image:[RCTUIImage systemImageNamed:@"doc.text"]
                                         identifier:nil
                                            handler:^(__kindof UIAction *action) { [self copyMarkdownToPasteboard]; }];
 
                      UIAction *copyPlainText =
-                         [UIAction actionWithTitle:@"Copy"
+                         [UIAction actionWithTitle:ENRMLocalizedString(@"enrm_copy")
                                              image:[RCTUIImage systemImageNamed:@"doc.on.doc"]
                                         identifier:nil
                                            handler:^(__kindof UIAction *action) { [self copyTableToPasteboard]; }];

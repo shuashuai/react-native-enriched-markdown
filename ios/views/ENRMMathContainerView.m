@@ -3,6 +3,7 @@
 #include <TargetConditionals.h>
 
 #if ENRICHED_MARKDOWN_MATH
+#import "ENRMLocalization.h"
 #import "PasteboardUtils.h"
 #import <IosMath/IosMath.h>
 #if TARGET_OS_OSX
@@ -93,13 +94,13 @@
                   previewProvider:nil
                    actionProvider:^UIMenu *(NSArray<UIMenuElement *> *suggestedActions) {
                      UIAction *copyPlainText =
-                         [UIAction actionWithTitle:@"Copy"
+                         [UIAction actionWithTitle:ENRMLocalizedString(@"enrm_copy")
                                              image:[RCTUIImage systemImageNamed:@"doc.on.doc"]
                                         identifier:nil
                                            handler:^(__kindof UIAction *action) { [self copyLatexToPasteboard]; }];
 
                      UIAction *copyMarkdown =
-                         [UIAction actionWithTitle:@"Copy as Markdown"
+                         [UIAction actionWithTitle:ENRMLocalizedString(@"enrm_copy_as_markdown")
                                              image:[RCTUIImage systemImageNamed:@"doc.text"]
                                         identifier:nil
                                            handler:^(__kindof UIAction *action) { [self copyMarkdownToPasteboard]; }];
@@ -113,8 +114,9 @@
 - (NSMenu *)menuForEvent:(NSEvent *)event
 {
   NSMenu *menu = [[NSMenu alloc] initWithTitle:@""];
-  [menu addItem:ENRMCreateMenuItem(NSLocalizedString(@"Copy", nil), ^{ [self copyLatexToPasteboard]; })];
-  [menu addItem:ENRMCreateMenuItem(NSLocalizedString(@"Copy as Markdown", nil), ^{ [self copyMarkdownToPasteboard]; })];
+  [menu addItem:ENRMCreateMenuItem(ENRMLocalizedString(@"enrm_copy"), ^{ [self copyLatexToPasteboard]; })];
+  [menu
+      addItem:ENRMCreateMenuItem(ENRMLocalizedString(@"enrm_copy_as_markdown"), ^{ [self copyMarkdownToPasteboard]; })];
   return menu;
 }
 #endif
