@@ -64,7 +64,7 @@ class BlockquoteSpan(
 
     val borderPaint = configureBorderPaint()
     val borderTop = top.toFloat()
-    val borderBottom = bottom.toFloat()
+    val borderBottom = paddedBottom(text, start, end, bottom).toFloat()
     // Anchor borders to the TextView left edge; list LeadingMarginSpan shifts `x` and breaks alignment.
     val anchorX = 0f
 
@@ -89,7 +89,7 @@ class BlockquoteSpan(
     lineNum: Int,
   ) {
     if (shouldSkipDrawing(text, start)) return
-    drawBackground(canvas, left, top, bottom, right)
+    drawBackground(canvas, left, top, paddedBottom(text, start, end, bottom), right)
   }
 
   @SuppressLint("WrongConstant") // Result of mask is always valid: 0, 1, 2, or 3
@@ -138,6 +138,26 @@ class BlockquoteSpan(
       }
 
     return maxDepth > depth
+  }
+
+  /** Extend the last blockquote line to include folded bottom padding. */
+  private fun paddedBottom(
+    text: CharSequence?,
+    start: Int,
+    end: Int,
+    bottom: Int,
+  ): Int {
+    if (text !is Spanned) return bottom
+
+    val paddingSpans = text.getSpans(start, end, BlockquoteBottomPaddingSpan::class.java)
+    for (span in paddingSpans) {
+      val spanStart = text.getSpanStart(span)
+      val spanEnd = text.getSpanEnd(span)
+      if (start <= spanStart && end >= spanEnd && text[spanStart] != '\n') {
+        return bottom + span.padding.toInt()
+      }
+    }
+    return bottom
   }
 
   private fun drawBackground(

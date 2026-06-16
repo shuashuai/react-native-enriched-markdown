@@ -95,16 +95,9 @@ NSString *const BlockquoteMarginBottomAttributeName = @"BlockquoteMarginBottom";
                                  }
 
                                  if (bottomPadding) {
-                                   CGFloat paddingValue = [bottomPadding floatValue];
-                                   if (paragraphStyle.paragraphSpacing > 0) {
-                                     fillHeight += paragraphStyle.paragraphSpacing;
-                                   } else if (paragraphStyle.minimumLineHeight > 0) {
-                                     fillHeight = MAX(fillHeight, paragraphStyle.minimumLineHeight);
-                                   } else {
-                                     fillHeight = MAX(fillHeight, paddingValue);
-                                   }
+                                   fillHeight += [bottomPadding floatValue];
                                  } else if (paragraphStyle.paragraphSpacing > 0) {
-                                   // Document-end fallback after trailing newlines are trimmed.
+                                   // Legacy fallback for in-flight spacer newlines.
                                    fillHeight += paragraphStyle.paragraphSpacing;
                                  }
 

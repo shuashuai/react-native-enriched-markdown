@@ -111,14 +111,18 @@
 
     if (style) {
       NSMutableParagraphStyle *mutableStyle = [style mutableCopy];
-      if (isBlockquote) {
-        // Bottom padding spacer newlines are stripped at document end; fold padding
-        // into the last content paragraph without touching marginBottom.
-        mutableStyle.paragraphSpacing = [_config blockquotePaddingBottom];
-      } else {
-        mutableStyle.paragraphSpacing = 0;
-      }
+      mutableStyle.paragraphSpacing = 0;
       mutableStyle.paragraphSpacingBefore = 0;
+
+      if (isBlockquote) {
+        // Fold bottom padding onto the last content character. Using paragraphSpacing
+        // would create an extraLineFragment (double border stripe + clipped height).
+        CGFloat paddingBottom = [_config blockquotePaddingBottom];
+        if (paddingBottom > 0) {
+          NSRange markerRange = NSMakeRange(lastContent.location, 1);
+          [output addAttribute:BlockquoteBottomPaddingAttributeName value:@(paddingBottom) range:markerRange];
+        }
+      }
 
       if (isLastElementImage(output)) {
         mutableStyle.lineSpacing = 0;
