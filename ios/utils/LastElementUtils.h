@@ -4,6 +4,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 static NSString *const CodeBlockAttributeName = @"CodeBlock";
+static NSString *const kBlockquoteDepthAttributeName = @"BlockquoteDepth";
 
 /**
  * Checks if the last element in the attributed string is a code block.
@@ -48,6 +49,20 @@ static inline BOOL isLastElementImage(NSAttributedString *text)
 
   id attachment = [text attribute:NSAttachmentAttributeName atIndex:lastContent.location effectiveRange:nil];
   return attachment != nil;
+}
+
+/** True when the document ends inside a blockquote (after trailing newline trim). */
+static inline BOOL isLastElementBlockquote(NSAttributedString *text)
+{
+  if (text.length == 0)
+    return NO;
+
+  NSRange lastContent = [text.string rangeOfCharacterFromSet:[[NSCharacterSet newlineCharacterSet] invertedSet]
+                                                     options:NSBackwardsSearch];
+  if (lastContent.location == NSNotFound)
+    return NO;
+
+  return [text attribute:kBlockquoteDepthAttributeName atIndex:lastContent.location effectiveRange:nil] != nil;
 }
 
 NS_ASSUME_NONNULL_END

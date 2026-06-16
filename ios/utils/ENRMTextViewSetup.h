@@ -67,6 +67,12 @@ static inline CGSize ENRMMeasureMarkdownText(ENRMPlatformTextView *textView, CGF
     measuredHeight += [config codeBlockPadding];
   }
 
+  // Blockquote bottom padding is internal inset, not trailing block margin.
+  // Keep it in layout height even when allowTrailingMargin is false.
+  if (isLastElementBlockquote(text)) {
+    measuredHeight += [config blockquotePaddingBottom];
+  }
+
   if (allowTrailingMargin && lastElementMarginBottom > 0) {
     measuredHeight += lastElementMarginBottom;
   }

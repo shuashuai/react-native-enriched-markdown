@@ -1,4 +1,5 @@
 #import "AttributedRenderer.h"
+#import "BlockquoteBorder.h"
 #import "CodeBlockBackground.h"
 #import "LastElementUtils.h"
 #import "MarkdownASTNode.h"
@@ -78,6 +79,10 @@
     if (style) {
       _lastElementMarginBottom = MAX(_lastElementMarginBottom, style.paragraphSpacing);
     }
+    NSNumber *marginMarker = [output attribute:BlockquoteMarginBottomAttributeName atIndex:i effectiveRange:NULL];
+    if (marginMarker) {
+      _lastElementMarginBottom = MAX(_lastElementMarginBottom, [marginMarker floatValue]);
+    }
     i = NSMaxRange(attrRange);
   }
 
@@ -100,11 +105,26 @@
     NSParagraphStyle *style = [output attribute:NSParagraphStyleAttributeName
                                         atIndex:lastContent.location
                                  effectiveRange:&styleRange];
+    BOOL isBlockquote = [output attribute:BlockquoteDepthAttributeName
+                                   atIndex:lastContent.location
+                            effectiveRange:NULL] != nil;
 
     if (style) {
       NSMutableParagraphStyle *mutableStyle = [style mutableCopy];
       mutableStyle.paragraphSpacing = 0;
       mutableStyle.paragraphSpacingBefore = 0;
+
+      if (isBlockquote) {
+        // Fold bottom padding onto the last content character. Using paragraphSpacing
+        // would create an extraLineFragment (double border stripe + clipped height).
+        CGFloat paddingBottom = [_config blockquotePaddingBottom];
+        if (paddingBottom > 0) {
+          NSRange markerRange = NSMakeRange(lastContent.location, 1);
+          [output addAttribute:BlockquoteBottomPaddingAttributeName
+                           value:@(paddingBottom)
+                           range:markerRange];
+        }
+      }
 
       if (isLastElementImage(output)) {
         mutableStyle.lineSpacing = 0;

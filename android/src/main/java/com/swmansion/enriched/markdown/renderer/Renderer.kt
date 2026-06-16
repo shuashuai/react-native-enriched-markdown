@@ -4,6 +4,7 @@ import android.content.Context
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import com.swmansion.enriched.markdown.parser.MarkdownASTNode
+import com.swmansion.enriched.markdown.spans.BlockquoteBottomPaddingSpan
 import com.swmansion.enriched.markdown.spans.ImageSpan
 import com.swmansion.enriched.markdown.spans.MarginBottomSpan
 import com.swmansion.enriched.markdown.styles.StyleConfig
@@ -59,26 +60,45 @@ class Renderer {
     return SpannableString(builder)
   }
 
-  /** Removes trailing newlines and captures the margin of the final element. */
+  /** Removes trailing margin spacing while preserving blockquote bottom padding spacer lines. */
   private fun removeTrailingMargin(builder: SpannableStringBuilder) {
     if (builder.isEmpty()) return
 
-    // Identify the last margin span and store its value
     val lastSpan =
       builder
         .getSpans(0, builder.length, MarginBottomSpan::class.java)
         .maxByOrNull { builder.getSpanEnd(it) }
 
+    val blockquotePaddingSpan =
+      builder
+        .getSpans(0, builder.length, BlockquoteBottomPaddingSpan::class.java)
+        .maxByOrNull { builder.getSpanStart(it) }
+
     lastElementMarginBottom = lastSpan?.marginBottom ?: 0f
 
-    // Trim trailing newlines
-    while (builder.endsWith('\n')) {
-      builder.delete(builder.length - 1, builder.length)
+    val preserveBlockquotePaddingSpacer = blockquotePaddingSpan != null
+
+    // Strip only the document-end margin spacer. Blockquote bottom padding uses a
+    // dedicated \n with fixed line height (same strategy as paddingTop) and must
+    // survive trimming — deleting it removes the inset entirely on Android.
+    if (lastSpan != null) {
+      val marginStart = builder.getSpanStart(lastSpan)
+      val marginEnd = builder.getSpanEnd(lastSpan)
+      if (
+        marginEnd == builder.length &&
+        marginStart >= 0 &&
+        marginEnd - marginStart == 1 &&
+        builder[marginStart] == '\n'
+      ) {
+        builder.delete(marginStart, marginEnd)
+        builder.removeSpan(lastSpan)
+      }
     }
 
-    // Clean up the span if it no longer covers any text
-    if (lastSpan != null && builder.getSpanEnd(lastSpan) >= builder.length) {
-      builder.removeSpan(lastSpan)
+    if (!preserveBlockquotePaddingSpacer) {
+      while (builder.endsWith('\n')) {
+        builder.delete(builder.length - 1, builder.length)
+      }
     }
   }
 
