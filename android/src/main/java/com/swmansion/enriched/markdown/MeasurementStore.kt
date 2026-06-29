@@ -18,6 +18,7 @@ import com.facebook.yoga.YogaMeasureOutput
 import com.swmansion.enriched.markdown.parser.Md4cFlags
 import com.swmansion.enriched.markdown.parser.Parser
 import com.swmansion.enriched.markdown.renderer.Renderer
+import com.swmansion.enriched.markdown.spans.BlockquoteSpan
 import com.swmansion.enriched.markdown.spans.MathMeasureRequest
 import com.swmansion.enriched.markdown.spans.MathMetrics
 import com.swmansion.enriched.markdown.spans.MathRenderMode
@@ -643,6 +644,9 @@ object MeasurementStore {
   ): Long {
     val content = text ?: ""
     val safeWidth = ceil(maxWidth).toInt().coerceAtLeast(1)
+    if (content is android.text.Spannable) {
+      BlockquoteSpan.updateTrailingMarginMeasureScales(content, safeWidth)
+    }
 
     val builder =
       StaticLayout.Builder
@@ -680,6 +684,9 @@ object MeasurementStore {
   ): Pair<Long, StaticLayout> {
     val content = text ?: ""
     val widthPx = ceil(maxWidth).toInt().coerceAtLeast(1)
+    if (content is android.text.Spannable) {
+      BlockquoteSpan.updateTrailingMarginMeasureScales(content, widthPx)
+    }
 
     val layout =
       StaticLayout.Builder

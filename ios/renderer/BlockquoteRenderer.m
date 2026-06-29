@@ -75,9 +75,7 @@ static NSString *const kNestedInfoRangeKey = @"range";
   [self applyBaseBlockquoteStyle:output
                            range:blockquoteRange
                            depth:currentDepth
-                    levelSpacing:levelSpacing
-                 backgroundColor:[_config blockquoteBackgroundColor]
-                      listRanges:listRanges];
+                 backgroundColor:[_config blockquoteBackgroundColor]];
 
   NSUInteger contentStart = blockquoteStart + paddingTopLength;
   NSUInteger contentEnd = end - paddingBottomLength;
@@ -94,6 +92,14 @@ static NSString *const kNestedInfoRangeKey = @"range";
     [self applyPaddingSpacerStyle:output
                             range:NSMakeRange(blockquoteStart, paddingTopLength)
                           padding:[_config blockquotePaddingTop]];
+  }
+
+  if (contentEnd > contentStart) {
+    [self applyBlockquoteContentInsets:output
+                                 range:NSMakeRange(contentStart, contentEnd - contentStart)
+                                 depth:currentDepth
+                          levelSpacing:levelSpacing
+                            listRanges:listRanges];
   }
 
   [self reapplyNestedStyles:output nestedInfo:nestedInfo levelSpacing:levelSpacing];
@@ -185,9 +191,7 @@ static NSString *const kNestedInfoRangeKey = @"range";
 - (void)applyBaseBlockquoteStyle:(NSMutableAttributedString *)output
                            range:(NSRange)blockquoteRange
                            depth:(NSInteger)currentDepth
-                    levelSpacing:(CGFloat)levelSpacing
                  backgroundColor:(RCTUIColor *)backgroundColor
-                      listRanges:(NSArray<NSValue *> *)listRanges
 {
   NSMutableDictionary *containerAttributes = [NSMutableDictionary dictionaryWithObject:@(currentDepth)
                                                                                 forKey:BlockquoteDepthAttributeName];
@@ -195,14 +199,36 @@ static NSString *const kNestedInfoRangeKey = @"range";
     containerAttributes[BlockquoteBackgroundColorAttributeName] = backgroundColor;
   }
   [output addAttributes:containerAttributes range:blockquoteRange];
+}
 
-  CGFloat totalIndent = [self calculateIndentForDepth:currentDepth levelSpacing:levelSpacing];
-  NSMutableParagraphStyle *paragraphStyle = getOrCreateParagraphStyle(output, blockquoteRange.location);
-  paragraphStyle.firstLineHeadIndent = totalIndent;
-  paragraphStyle.headIndent = totalIndent;
+- (void)applyBlockquoteContentInsets:(NSMutableAttributedString *)output
+                               range:(NSRange)contentRange
+                               depth:(NSInteger)currentDepth
+                        levelSpacing:(CGFloat)levelSpacing
+                          listRanges:(NSArray<NSValue *> *)listRanges
+{
+  if (contentRange.length == 0) {
+    return;
+  }
+
+  CGFloat gapWidth = [_config blockquoteGapWidth];
+  CGFloat fontSize = [_config blockquoteFontSize];
+  CGFloat headIndent = [self calculateIndentForDepth:currentDepth levelSpacing:levelSpacing];
+  // tailIndent reserves space from the container edge, but CJK lines rarely pack flush to that
+  // edge (~0–1 em slack). Pull back by ~half em so the visible right gap matches gapWidth.
+  CGFloat trailingInset = MAX(0.0, gapWidth - fontSize * 0.5);
+
+  NSMutableParagraphStyle *paragraphStyle = getOrCreateParagraphStyle(output, contentRange.location);
+  // headIndent positions text after the border bar + gap; the left red-box width is gapWidth only.
+  paragraphStyle.firstLineHeadIndent = headIndent;
+  paragraphStyle.headIndent = headIndent;
+  paragraphStyle.tailIndent = -trailingInset;
+  if (@available(iOS 14.0, *)) {
+    paragraphStyle.lineBreakStrategy = NSLineBreakStrategyPushOut;
+  }
 
   [self applyAttributes:@{NSParagraphStyleAttributeName : paragraphStyle}
-                toRange:blockquoteRange
+                toRange:contentRange
         excludingRanges:listRanges
                inOutput:output];
 }
@@ -282,9 +308,16 @@ static NSString *const kNestedInfoRangeKey = @"range";
     NSMutableParagraphStyle *style = getOrCreateParagraphStyle(output, nestedRange.location);
 
     CGFloat indent = [self calculateIndentForDepth:nestedDepth levelSpacing:levelSpacing];
+    CGFloat gapWidth = [_config blockquoteGapWidth];
+    CGFloat fontSize = [_config blockquoteFontSize];
+    CGFloat trailingInset = MAX(0.0, gapWidth - fontSize * 0.5);
+
     style.firstLineHeadIndent = indent;
     style.headIndent = indent;
-    style.tailIndent = 0;
+    style.tailIndent = -trailingInset;
+    if (@available(iOS 14.0, *)) {
+      style.lineBreakStrategy = NSLineBreakStrategyPushOut;
+    }
 
     [output
         addAttributes:@{NSParagraphStyleAttributeName : style, BlockquoteDepthAttributeName : info[kNestedInfoDepthKey]}

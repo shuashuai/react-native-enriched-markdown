@@ -71,6 +71,11 @@
 #if !TARGET_OS_OSX
   _scrollView.bounces = YES;
   _scrollView.alwaysBounceHorizontal = NO;
+  _scrollView.contentInset = UIEdgeInsetsZero;
+  _scrollView.scrollIndicatorInsets = UIEdgeInsetsZero;
+  if (@available(iOS 11.0, *)) {
+    _scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+  }
 #endif
   [self addSubview:_scrollView];
 
@@ -271,11 +276,19 @@
 
   for (NSArray<TableCellData *> *row in _rows) {
     for (NSUInteger column = 0; column < row.count; column++) {
+      CGFloat measuredTextWidth = 0;
+#if !TARGET_OS_OSX
+      measuredTextWidth = [self measureAttributedTextMaxLineWidth:row[column].attributedText
+                                                     maxTextWidth:maximumColumnWidth];
+#else
       CGRect boundingRect = [row[column].attributedText
           boundingRectWithSize:CGSizeMake(maximumColumnWidth, CGFLOAT_MAX)
                        options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
                        context:nil];
-      CGFloat width = MIN(MAX(ceil(boundingRect.size.width) + horizontalPadding, minimumColumnWidth),
+      measuredTextWidth = ceil(boundingRect.size.width);
+#endif
+      // +1pt guards against NSString/UITextView metric drift on some devices.
+      CGFloat width = MIN(MAX(measuredTextWidth + horizontalPadding + 1.0, minimumColumnWidth),
                           maximumColumnWidth + horizontalPadding);
       if (width > [_colWidths[column] doubleValue])
         _colWidths[column] = @(width);
@@ -287,11 +300,17 @@
     CGFloat maxHeight = 0;
     for (NSUInteger column = 0; column < row.count; column++) {
       CGFloat availableWidth = [_colWidths[column] doubleValue] - horizontalPadding;
+      CGFloat measuredHeight = 0;
+#if !TARGET_OS_OSX
+      measuredHeight = [self measureAttributedTextHeight:row[column].attributedText textWidth:availableWidth];
+#else
       CGRect boundingRect = [row[column].attributedText
           boundingRectWithSize:CGSizeMake(availableWidth, CGFLOAT_MAX)
                        options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
                        context:nil];
-      maxHeight = MAX(maxHeight, ceil(boundingRect.size.height) + verticalPadding);
+      measuredHeight = ceil(boundingRect.size.height);
+#endif
+      maxHeight = MAX(maxHeight, measuredHeight + verticalPadding);
     }
     [_rowHeights addObject:@(maxHeight)];
   }
@@ -385,6 +404,55 @@
 #endif
 
 #if !TARGET_OS_OSX
+- (CGFloat)measureAttributedTextMaxLineWidth:(NSAttributedString *)attributedText maxTextWidth:(CGFloat)maxTextWidth
+{
+  if (attributedText.length == 0) {
+    return 0;
+  }
+
+  NSTextStorage *storage = [[NSTextStorage alloc] initWithAttributedString:attributedText];
+  NSLayoutManager *layoutManager = [[NSLayoutManager alloc] init];
+  NSTextContainer *container = [[NSTextContainer alloc] initWithSize:CGSizeMake(maxTextWidth, CGFLOAT_MAX)];
+  container.lineFragmentPadding = 0;
+  container.lineBreakMode = NSLineBreakByWordWrapping;
+  [layoutManager addTextContainer:container];
+  [storage addLayoutManager:layoutManager];
+  [layoutManager ensureLayoutForTextContainer:container];
+
+  __block CGFloat maxLineWidth = 0;
+  NSRange glyphRange = [layoutManager glyphRangeForTextContainer:container];
+  [layoutManager enumerateLineFragmentsForGlyphRange:glyphRange
+                                          usingBlock:^(CGRect rect, CGRect usedRect, NSTextContainer *textContainer,
+                                                       NSRange lineGlyphRange, BOOL *stop) {
+                                            maxLineWidth = MAX(maxLineWidth, ceil(CGRectGetWidth(usedRect)));
+                                          }];
+  return maxLineWidth;
+}
+
+- (CGFloat)measureAttributedTextHeight:(NSAttributedString *)attributedText textWidth:(CGFloat)textWidth
+{
+  if (attributedText.length == 0) {
+    return 0;
+  }
+
+  NSTextStorage *storage = [[NSTextStorage alloc] initWithAttributedString:attributedText];
+  NSLayoutManager *layoutManager = [[NSLayoutManager alloc] init];
+  NSTextContainer *container = [[NSTextContainer alloc] initWithSize:CGSizeMake(textWidth, CGFLOAT_MAX)];
+  container.lineFragmentPadding = 0;
+  container.lineBreakMode = NSLineBreakByWordWrapping;
+  [layoutManager addTextContainer:container];
+  [storage addLayoutManager:layoutManager];
+  [layoutManager ensureLayoutForTextContainer:container];
+
+  return ceil([layoutManager usedRectForTextContainer:container].size.height);
+}
+
+- (CGFloat)horizontalScrollTrailingInset
+{
+  // Lets users scroll the last column fully into view (border overhang + cell padding).
+  return ceil(_borderWidth + self.config.tableCellPaddingHorizontal);
+}
+
 - (void)renderRow:(NSArray<TableCellData *> *)row
               atY:(CGFloat)yOffset
            height:(CGFloat)height
@@ -624,7 +692,9 @@
   [super layoutSubviews];
   _scrollView.frame = self.bounds;
 #if !TARGET_OS_OSX
-  _scrollView.contentSize = CGSizeMake(MAX(_totalTableWidth, self.bounds.size.width), _totalTableHeight);
+  CGFloat trailingInset = [self horizontalScrollTrailingInset];
+  CGFloat scrollContentWidth = _totalTableWidth + trailingInset;
+  _scrollView.contentSize = CGSizeMake(MAX(scrollContentWidth, self.bounds.size.width), _totalTableHeight);
   _scrollView.scrollEnabled = (_totalTableWidth > self.bounds.size.width);
   _gridContainer.frame = CGRectMake(0, 0, _totalTableWidth, _totalTableHeight);
 #else

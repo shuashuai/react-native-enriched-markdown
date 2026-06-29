@@ -7,14 +7,17 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.text.Layout
+import android.text.Spannable
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
+import android.view.View.MeasureSpec
 import com.facebook.react.bridge.ReadableMap
 import com.swmansion.enriched.markdown.accessibility.AccessibleMarkdownTextView
 import com.swmansion.enriched.markdown.parser.Md4cFlags
 import com.swmansion.enriched.markdown.parser.Parser
 import com.swmansion.enriched.markdown.renderer.Renderer
+import com.swmansion.enriched.markdown.spans.BlockquoteSpan
 import com.swmansion.enriched.markdown.spoiler.SpoilerCapable
 import com.swmansion.enriched.markdown.spoiler.SpoilerOverlay
 import com.swmansion.enriched.markdown.spoiler.SpoilerOverlayDrawer
@@ -238,8 +241,18 @@ class EnrichedMarkdownText
 
     private fun applyRenderedText(styledText: CharSequence) {
       val tailStart = previousTextLength
+      val contentWidth = width - paddingLeft - paddingRight
+      if (contentWidth > 0 && styledText is Spannable) {
+        BlockquoteSpan.updateTrailingMarginMeasureScales(styledText, contentWidth)
+      }
 
       text = styledText
+
+      if (contentWidth <= 0) {
+        post { applyBlockquoteTrailingMarginMeasureScale() }
+      } else {
+        applyBlockquoteTrailingMarginMeasureScale()
+      }
 
       if (movementMethod !is LinkLongPressMovementMethod) {
         movementMethod = LinkLongPressMovementMethod.createInstance()
@@ -323,9 +336,47 @@ class EnrichedMarkdownText
       super.onDetachedFromWindow()
     }
 
+    override fun onMeasure(
+      widthMeasureSpec: Int,
+      heightMeasureSpec: Int,
+    ) {
+      val contentWidth =
+        MeasureSpec.getSize(widthMeasureSpec) - paddingLeft - paddingRight
+      if (contentWidth > 0 && text is Spannable) {
+        BlockquoteSpan.updateTrailingMarginMeasureScales(text as Spannable, contentWidth)
+      }
+      super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+    }
+
+    override fun onSizeChanged(
+      w: Int,
+      h: Int,
+      oldw: Int,
+      oldh: Int,
+    ) {
+      super.onSizeChanged(w, h, oldw, oldh)
+      if (w != oldw) {
+        applyBlockquoteTrailingMarginMeasureScale()
+      }
+    }
+
     override fun onDraw(canvas: Canvas) {
       super.onDraw(canvas)
       spoilerOverlayDrawer?.draw(canvas)
+    }
+
+    private fun applyBlockquoteTrailingMarginMeasureScale() {
+      val spannable = text as? Spannable ?: return
+      val contentWidth = width - paddingLeft - paddingRight
+      if (contentWidth <= 0) {
+        post { applyBlockquoteTrailingMarginMeasureScale() }
+        return
+      }
+
+      if (BlockquoteSpan.updateTrailingMarginMeasureScales(spannable, contentWidth)) {
+        requestLayout()
+        invalidate()
+      }
     }
 
     private fun stopSpoilerAnimations() {

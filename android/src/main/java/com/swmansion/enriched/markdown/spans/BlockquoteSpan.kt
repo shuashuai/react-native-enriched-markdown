@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.text.Layout
+import android.text.Spannable
 import android.text.Spanned
 import android.text.TextPaint
 import android.text.style.LeadingMarginSpan
@@ -38,10 +39,33 @@ class BlockquoteSpan(
   // Cache for shouldSkipDrawing to avoid repeated getSpans() calls during draw passes
   private var cachedText: CharSequence? = null
   private var cachedMaxDepthByPosition = mutableMapOf<Int, Int>()
+  var trailingMarginMeasureScaleX: Float = 1f
+    private set
 
-  override fun updateMeasureState(tp: TextPaint) = applyTextStyle(tp)
+  fun updateTrailingMarginMeasureScale(viewWidthPx: Int) {
+    val leading = getLeadingMargin(true)
+    // Measure-only textScaleX wraps earlier; add ~half em so draw-time glyphs still leave gapWidth.
+    val effectiveGap = blockquoteStyle.gapWidth + blockquoteStyle.fontSize * 0.5f
+    val available = viewWidthPx - leading
+    trailingMarginMeasureScaleX =
+      if (available > effectiveGap) {
+        available / (available - effectiveGap)
+      } else {
+        1f
+      }
+  }
 
-  override fun updateDrawState(tp: TextPaint) = applyTextStyle(tp)
+  override fun updateMeasureState(tp: TextPaint) {
+    applyTextStyle(tp)
+    if (trailingMarginMeasureScaleX != 1f) {
+      tp.textScaleX = trailingMarginMeasureScaleX
+    }
+  }
+
+  override fun updateDrawState(tp: TextPaint) {
+    applyTextStyle(tp)
+    tp.textScaleX = 1f
+  }
 
   override fun getLeadingMargin(first: Boolean): Int = levelSpacing.toInt()
 
@@ -108,6 +132,25 @@ class BlockquoteSpan(
 
     private val sharedBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val sharedBackgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+
+    /** Mirrors iOS tailIndent = -gapWidth for StaticLayout (no native trailing-margin span). */
+    fun updateTrailingMarginMeasureScales(
+      spannable: Spannable,
+      viewWidthPx: Int,
+    ): Boolean {
+      if (viewWidthPx <= 0) return false
+
+      var changed = false
+      val spans = spannable.getSpans(0, spannable.length, BlockquoteSpan::class.java)
+      for (span in spans) {
+        val previousScale = span.trailingMarginMeasureScaleX
+        span.updateTrailingMarginMeasureScale(viewWidthPx)
+        if (span.trailingMarginMeasureScaleX != previousScale) {
+          changed = true
+        }
+      }
+      return changed
+    }
   }
 
   private fun configureBorderPaint(): Paint =
